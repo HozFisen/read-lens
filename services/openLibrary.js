@@ -75,7 +75,7 @@ if (require.main === module) {
 
             console.log('\nTesting getWork...');
             const work = await OpenLib.getWork('OL1099479W');
-            console.log('Work title:', work.title);
+            console.log('Work title:', work.subjects);
 
             console.log('\nTesting getCoverUrl...');
             if (searchResults.docs[0]?.cover_i) {
