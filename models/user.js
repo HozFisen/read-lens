@@ -17,6 +17,9 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId',
         otherKey: 'bookId'
     });
+      User.hasMany(models.UserPreference, {
+        foreignKey: 'userId'
+      })
     }
   }
   User.init({
@@ -25,8 +28,8 @@ module.exports = (sequelize, DataTypes) => {
       unique: {msg: "Email is already registered"},
       allowNull: false,
       validate: {
-        isNull: {msg: "Email is required"},
-        isEmpty: {msg: "Email is required"},
+        notNull: {msg: "Email is required"},
+        notEmpty: {msg: "Email is required"},
         isEmail: {msg: "Email is invalid"}
       }
     },
@@ -34,16 +37,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isNull: {msg: "Password is required"},
-        isEmpty: {msg: "Password is required"}
+        notNull: {msg: "Password is required"},
+        notEmpty: {msg: "Password is required"}
       }
     },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isNull: {msg: "Username is required"},
-        isEmpty: {msg: "Username is required"},
+        notNull: {msg: "Username is required"},
+        notEmpty: {msg: "Username is required"},
       }
     },
     role: DataTypes.STRING

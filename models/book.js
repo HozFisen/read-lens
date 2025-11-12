@@ -23,8 +23,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isNull: {msg: "OLID is required"},
-        isEmpty: {msg: "OLID is required"}
+        notNull: {msg: "OLID is required"},
+        notEmpty: {msg: "OLID is required"}
       }
     },
   }, {

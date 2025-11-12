@@ -20,16 +20,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
-        isNull: {msg: "userId is required"},
-        isEmpty: {msg: "userId is required"}
+        notNull: {msg: "userId is required"},
+        notEmpty: {msg: "userId is required"}
       }
     },
     bookId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
-        isNull: {msg: "bookId is required"},
-        isEmpty: {msg: "bookId is required"}
+        notNull: {msg: "bookId is required"},
+        notEmpty: {msg: "bookId is required"}
       }
     },
   }, {

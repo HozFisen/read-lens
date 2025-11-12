@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      UserPreference.belongsTo(models.User, {foreignKey: 'userId'})
     }
   }
   UserPreference.init({
@@ -18,15 +19,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
-        isNull: {msg: "userId is required"},
-        isEmpty: {msg: "userId is required"}
+        notNull: {msg: "userId is required"},
+        notEmpty: {msg: "userId is required"}
       }
     },
     subject: {
-      type: DataTypes.STRING
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notNull: {msg: "Subject is required"},
+        notEmpty: {msg: "Subject is required"}
+      }
     },
     weight: {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
     }
   }, {
     sequelize,
