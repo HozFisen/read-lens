@@ -1,5 +1,6 @@
 const OpenLib = require('../services/openLibrary');
-const { Book, UserLike, UserPreference, User } = require('../models');
+const geminiService = require('../services/gemini');
+const { Book, UserLikes, UserPreference, User } = require('../models');
 
 class BookController {
   /**
@@ -48,6 +49,7 @@ class BookController {
   static async detail(req, res, next) {
     try {
       const { id } = req.params;
+      const { summarize } = req.query; // Optional: ?summarize=true
 
       if (!id) {
         throw { name: 'ValidationError', message: 'Book ID is required' };
@@ -59,13 +61,27 @@ class BookController {
       // Extract cover ID from covers array if available
       const coverId = work.covers?.[0];
 
+      // Get original description
+      const originalDescription = typeof work.description === 'object' 
+        ? work.description.value 
+        : work.description || 'No description available';
+
+      // Generate AI summary if requested and description exists
+      let aiSummary = null;
+      if (summarize === 'true' && originalDescription !== 'No description available') {
+        aiSummary = await geminiService.summarizeBookDescription(
+          originalDescription,
+          work.title,
+          work.subjects || []
+        );
+      }
+
       // Format response
       const bookDetail = {
         olid: id,
         title: work.title,
-        description: typeof work.description === 'object' 
-          ? work.description.value 
-          : work.description || 'No description available',
+        description: originalDescription,
+        ...(aiSummary && { aiSummary }), // Include AI summary only if generated
         subjects: work.subjects || [],
         authors: work.authors?.map(author => ({
           key: author.author?.key,
@@ -113,7 +129,7 @@ class BookController {
       });
 
       // Check if user already liked this book
-      const existingLike = await UserLike.findOne({
+      const existingLike = await UserLikes.findOne({
         where: {
           userId: userId,
           bookId: book.id
@@ -125,7 +141,7 @@ class BookController {
       }
 
       // Create the like relationship
-      await UserLike.create({
+      await UserLikes.create({
         userId: userId,
         bookId: book.id
       });
@@ -171,7 +187,7 @@ class BookController {
         }
 
         // Normalize subject (trim and lowercase for consistency)
-        const normalizedSubject = subject.trim().toLowerCase();
+        const normalizedSubject = subject.trim();
 
         if (normalizedSubject.length === 0) {
           continue;
