@@ -25,6 +25,12 @@ const errorHandler = (error, req, res, next) => {
       message = error.message || 'Duplicate entry';
       break;
 
+    // Foreign key constraint errors
+    case 'SequelizeForeignKeyConstraintError':
+      status = 400;
+      message = 'Invalid reference to related resource';
+      break;
+
     // Authentication errors
     case 'Unauthenticated':
     case 'JsonWebTokenError':
@@ -61,12 +67,6 @@ const errorHandler = (error, req, res, next) => {
     case 'SequelizeDatabaseError':
       status = 500;
       message = 'Database error occurred';
-      break;
-
-    // Foreign key constraint errors
-    case 'SequelizeForeignKeyConstraintError':
-      status = 400;
-      message = 'Invalid reference to related resource';
       break;
 
     // Connection errors

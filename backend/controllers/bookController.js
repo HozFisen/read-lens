@@ -1,6 +1,6 @@
 const OpenLib = require('../services/openLibrary');
 const geminiService = require('../services/gemini');
-const { Book, UserLikes, UserPreference, User } = require('../models');
+const { Book, UserLike, UserPreference, User } = require('../models');
 
 class BookController {
   /**
@@ -129,7 +129,7 @@ class BookController {
       });
 
       // Check if user already liked this book
-      const existingLike = await UserLikes.findOne({
+      const existingLike = await UserLike.findOne({
         where: {
           userId: userId,
           bookId: book.id
@@ -141,7 +141,7 @@ class BookController {
       }
 
       // Create the like relationship
-      await UserLikes.create({
+      await UserLike.create({
         userId: userId,
         bookId: book.id
       });

@@ -33,6 +33,7 @@ app.post('/logout', authentication, userController.logout);
 
 // Book interaction routes
 app.post('/book/:id/like', authentication, bookController.like);
+app.get('/user/:id', authentication, authentication, userController.readUser)
 
 // Error handler must be last
 app.use(errorHandler);

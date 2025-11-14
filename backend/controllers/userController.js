@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, UserLike, Book } = require('../models');
 const { hashPassword, comparePassword } = require('../helpers/bcrypt');
 const { generateToken } = require('../helpers/jwt');
 const { OAuth2Client } = require('google-auth-library');
@@ -51,12 +51,27 @@ class UserController {
     try {
       const { id } = req.params;
 
-      const user = await User.findById(id).select('-password');
-      if (!user) return res.status(404).json({ message: 'User not found' });
+      const user = await User.findByPk(id, {
+        attributes: { exclude: ['password'] },
+        include: [
+          {
+            model: Book,
+            through: { 
+              model: UserLike,
+              attributes: ['createdAt'] // Include when the book was liked
+            },
+            attributes: ['id', 'olid'] // Only include necessary book fields
+          }
+        ]
+      });
+      
+      if (!user) {
+        throw { name: 'NotFound', message: 'User not found' };
+      }
 
       res.json(user);
     } catch (error) {
-      next(error)
+      next(error);
     }
   };
   static async allUser(req, res, next) {
@@ -73,31 +88,45 @@ class UserController {
       const { id } = req.params;
       const { username } = req.body;
 
-      if (!username) return res.status(400).json({ message: 'Username required' });
+      if (!username) {
+        throw { name: 'ValidationError', message: 'Username is required' };
+      }
 
-      const user = await User.findByIdAndUpdate(
-        id,
-        { username },
-        { new: true }
-      ).select('-password');
+      const user = await User.findByPk(id);
+      
+      if (!user) {
+        throw { name: 'NotFound', message: 'User not found' };
+      }
 
-      if (!user) return res.status(404).json({ message: 'User not found' });
+      await user.update({ username });
 
-      res.json({ message: 'Username updated', user });
-    } catch (err) {
-      res.status(500).json({ message: 'Server error' });
+      // Return user without password
+      const updatedUser = user.toJSON();
+      delete updatedUser.password;
+
+      res.json({ 
+        message: 'Username updated', 
+        user: updatedUser 
+      });
+    } catch (error) {
+      next(error);
     }
   }
   static async delete(req, res, next) {
     try {
       const { id } = req.params;
 
-      const removed = await User.findByIdAndDelete(id);
-      if (!removed) return res.status(404).json({ message: 'User not found' });
+      const user = await User.findByPk(id);
+      
+      if (!user) {
+        throw { name: 'NotFound', message: 'User not found' };
+      }
+
+      await user.destroy();
 
       res.json({ message: 'User deleted' });
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
 
