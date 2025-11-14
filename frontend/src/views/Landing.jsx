@@ -24,10 +24,17 @@ const Landing = () => {
     
     try {
       const data = await apiRequest(`/?page=${currentPage}&limit=${booksPerPage}`);
-      setBooks(data.books || []);
-      setTotalPages(data.totalPages || 1);
+      
+      // Safe access with defaults
+      const booksArray = Array.isArray(data?.books) ? data.books : [];
+      const pages = typeof data?.totalPages === 'number' && data.totalPages > 0 ? data.totalPages : 1;
+      
+      setBooks(booksArray);
+      setTotalPages(pages);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to fetch books. Please try again.');
+      setBooks([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }

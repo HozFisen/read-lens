@@ -24,10 +24,17 @@ const BookDetails = () => {
     
     try {
       const data = await apiRequest(`/book/${id}`);
+      
+      // Validate that we got book data
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid book data received');
+      }
+      
       setBook(data);
-      setLiked(data.isLiked || false);
+      setLiked(data?.isLiked || false);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to load book details');
+      setBook(null);
     } finally {
       setLoading(false);
     }
@@ -90,17 +97,21 @@ const BookDetails = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Book Cover */}
           <div className="md:col-span-1">
-            {book.coverUrl ? (
+            {book?.coverUrl ? (
               <img 
                 src={book.coverUrl} 
-                alt={book.title}
+                alt={book?.title || 'Book cover'}
                 className="w-full border-4 border-black"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="w-full aspect-[2/3] bg-pastel-yellow border-4 border-black flex items-center justify-center">
-                <BookOpen className="w-24 h-24 text-gray-400" />
-              </div>
-            )}
+            ) : null}
+            
+            <div className={`w-full aspect-[2/3] bg-pastel-yellow border-4 border-black items-center justify-center ${book?.coverUrl ? 'hidden' : 'flex'}`}>
+              <BookOpen className="w-24 h-24 text-gray-400" />
+            </div>
 
             <button 
               onClick={handleLike}
@@ -117,28 +128,28 @@ const BookDetails = () => {
           {/* Book Info */}
           <div className="md:col-span-2">
             <h1 className="font-black text-4xl md:text-5xl mb-4">
-              {book.title}
+              {book?.title || 'Untitled Book'}
             </h1>
 
-            {book.author && (
+            {book?.author && (
               <p className="text-2xl font-bold text-gray-700 mb-2">
                 by {book.author}
               </p>
             )}
 
-            {book.publishYear && (
+            {book?.publishYear && (
               <p className="text-xl font-semibold text-gray-600 mb-6">
                 Published: {book.publishYear}
               </p>
             )}
 
-            {book.isbn && (
+            {book?.isbn && (
               <div className="neo-brutal-sm bg-pastel-green px-4 py-2 inline-block mb-6">
                 <span className="font-bold">ISBN: {book.isbn}</span>
               </div>
             )}
 
-            {book.description && (
+            {book?.description && (
               <div className="mb-6">
                 <h2 className="font-black text-2xl mb-3">Description</h2>
                 <p className="text-lg leading-relaxed font-medium text-gray-800">
@@ -147,7 +158,7 @@ const BookDetails = () => {
               </div>
             )}
 
-            {book.subjects && book.subjects.length > 0 && (
+            {book?.subjects && Array.isArray(book.subjects) && book.subjects.length > 0 && (
               <div>
                 <h2 className="font-black text-2xl mb-3">Subjects</h2>
                 <div className="flex flex-wrap gap-2">

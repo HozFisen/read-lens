@@ -24,9 +24,13 @@ const UserPage = () => {
     
     try {
       const data = await apiRequest(`/user/${username}/bookshelf`);
-      setBooks(data.books || []);
+      
+      // Safe access with array validation
+      const booksArray = Array.isArray(data?.books) ? data.books : [];
+      setBooks(booksArray);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to load bookshelf');
+      setBooks([]);
     } finally {
       setLoading(false);
     }
