@@ -13,6 +13,7 @@ const UserPage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [totalBooks, setTotalBooks] = useState(0);
 
   useEffect(() => {
     fetchUserBookshelf();
@@ -23,14 +24,60 @@ const UserPage = () => {
     setError(null);
     
     try {
+      // Step 1: Fetch user's bookshelf (gets olids only)
       const data = await apiRequest(`/user/${username}/bookshelf`);
       
       // Safe access with array validation
-      const booksArray = Array.isArray(data?.books) ? data.books : [];
-      setBooks(booksArray);
+      const bookshelfData = Array.isArray(data?.books) ? data.books : [];
+      setTotalBooks(data?.totalBooks || bookshelfData.length);
+      
+      // Step 2: Fetch full book details for each book from OpenLibrary
+      if (bookshelfData.length > 0) {
+        const bookDetailsPromises = bookshelfData.map(async (bookshelfItem) => {
+          try {
+            const bookDetail = await apiRequest(`/book/${bookshelfItem.olid}`);
+            
+            // Extract author name (backend returns key in name field)
+            let authorName = 'Unknown Author';
+            if (bookDetail.authors && bookDetail.authors.length > 0) {
+              // The key format is like "/authors/OL123A"
+              const authorKey = bookDetail.authors[0].key;
+              if (authorKey) {
+                // Extract just the ID part and format it nicely
+                authorName = authorKey.split('/').pop() || 'Unknown Author';
+              }
+            }
+            
+            return {
+              olid: bookshelfItem.olid,
+              title: bookDetail.title || 'Untitled',
+              author: authorName,
+              coverUrl: bookDetail.coverUrl,
+              publishYear: bookDetail.firstPublishDate?.split('-')?.[0] || null,
+              likedAt: bookshelfItem.likedAt
+            };
+          } catch (err) {
+            // If individual book fetch fails, return minimal data
+            console.error(`Failed to fetch book ${bookshelfItem.olid}:`, err);
+            return {
+              olid: bookshelfItem.olid,
+              title: 'Book Details Unavailable',
+              author: 'Unknown',
+              coverUrl: null,
+              likedAt: bookshelfItem.likedAt
+            };
+          }
+        });
+        
+        const booksWithDetails = await Promise.all(bookDetailsPromises);
+        setBooks(booksWithDetails);
+      } else {
+        setBooks([]);
+      }
     } catch (err) {
       setError(err?.message || 'Failed to load bookshelf');
       setBooks([]);
+      setTotalBooks(0);
     } finally {
       setLoading(false);
     }
@@ -52,9 +99,16 @@ const UserPage = () => {
       <div className="neo-brutal bg-pastel-green p-8 md:p-12 mb-8">
         <div className="flex items-center gap-4 mb-4">
           <BookMarked className="w-12 h-12" />
-          <h1 className="font-black text-4xl md:text-5xl">
-            {username}'s Bookshelf
-          </h1>
+          <div>
+            <h1 className="font-black text-4xl md:text-5xl">
+              {username}'s Bookshelf
+            </h1>
+            {totalBooks > 0 && (
+              <p className="text-lg font-bold text-gray-700 mt-2">
+                {totalBooks} {totalBooks === 1 ? 'book' : 'books'}
+              </p>
+            )}
+          </div>
         </div>
         {isOwnProfile && (
           <p className="text-lg font-semibold text-gray-700">
@@ -97,11 +151,22 @@ const UserPage = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {books.map(book => (
-            <BookCard key={book.id} book={book} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {books.map((book, index) => (
+              <BookCard key={book.olid || index} book={book} />
+            ))}
+          </div>
+          
+          {/* Stats or Additional Info */}
+          {totalBooks > 0 && (
+            <div className="mt-8 text-center">
+              <p className="text-sm font-semibold text-gray-600">
+                Showing all {totalBooks} {totalBooks === 1 ? 'book' : 'books'}
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
