@@ -51,19 +51,42 @@ class UserController {
     try {
       const { id } = req.params;
 
-      const user = await User.findByPk(id, {
-        attributes: { exclude: ['password'] },
-        include: [
-          {
-            model: Book,
-            through: { 
-              model: UserLike,
-              attributes: ['createdAt'] // Include when the book was liked
-            },
-            attributes: ['id', 'olid'] // Only include necessary book fields
-          }
-        ]
-      });
+      let user;
+
+      // Try to find by ID first (numeric)
+      if (!isNaN(id)) {
+        user = await User.findByPk(id, {
+          attributes: { exclude: ['password'] },
+          include: [
+            {
+              model: Book,
+              through: { 
+                model: UserLike,
+                attributes: ['createdAt']
+              },
+              attributes: ['id', 'olid']
+            }
+          ]
+        });
+      }
+
+      // If not found by ID or ID is not numeric, try username
+      if (!user) {
+        user = await User.findOne({
+          where: { username: id },
+          attributes: { exclude: ['password'] },
+          include: [
+            {
+              model: Book,
+              through: { 
+                model: UserLike,
+                attributes: ['createdAt']
+              },
+              attributes: ['id', 'olid']
+            }
+          ]
+        });
+      }
       
       if (!user) {
         throw { name: 'NotFound', message: 'User not found' };
@@ -73,7 +96,7 @@ class UserController {
     } catch (error) {
       next(error);
     }
-  };
+  }
   static async allUser(req, res, next) {
     try {
       const users = await User.findAll()
@@ -247,6 +270,49 @@ class UserController {
       // We just send a success response
       res.status(200).json({
         message: 'Logout successful'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getUserBookshelf(req, res, next) {
+    try {
+      const { username } = req.params;
+
+      // Find user by username
+      const user = await User.findOne({
+        where: { username },
+        attributes: ['id', 'username', 'email'],
+        include: [
+          {
+            model: Book,
+            through: { 
+              model: UserLike,
+              attributes: ['createdAt']
+            },
+            attributes: ['id', 'olid']
+          }
+        ]
+      });
+      
+      if (!user) {
+        throw { name: 'NotFound', message: 'User not found' };
+      }
+
+      // Return just the olids and liked dates
+      const books = user.Books.map(book => ({
+        olid: book.olid,
+        likedAt: book.UserLike.createdAt
+      }));
+
+      res.json({
+        user: {
+          username: user.username,
+          email: user.email
+        },
+        books,
+        totalBooks: books.length
       });
     } catch (error) {
       next(error);

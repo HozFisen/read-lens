@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit",
+    "test:watch": "NODE_ENV=test jest --watch --runInBand",
+    "test:coverage": "NODE_ENV=test jest --coverage --runInBand --detectOpenHandles --forceExit",
+    "test:verbose": "NODE_ENV=test jest --verbose --runInBand --detectOpenHandles --forceExit"
   },
   "keywords": [],
   "author": "HozFisen",
@@ -18,11 +21,13 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "google-auth-library": "^10.5.0",
+    "jest": "^30.2.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "pg": "^8.16.3",
     "sequelize": "^6.37.7",
-    "sequelize-cli": "^6.6.3"
+    "sequelize-cli": "^6.6.3",
+    "supertest": "^7.1.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
