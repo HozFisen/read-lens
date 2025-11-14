@@ -1,5 +1,5 @@
 // src/config/api.js
-export const API_BASE_URL = 'http://hozfisen.my.id';
+export const API_BASE_URL = 'https://hozfisen.my.id';
 
 export const apiRequest = async (endpoint, options = {}) => {
   try {
